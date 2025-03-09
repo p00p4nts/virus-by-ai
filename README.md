@@ -1,6 +1,6 @@
 # MalwareTestBench
 
-**⚠️ DISCLAIMER ⚠️**  
+** WARNING DISCLAIMER **  
 This repository contains proof-of-concept code for simulating malware behavior in controlled, ethical, and legal testing environments. It is intended **solely for educational and security research purposes** by authorized professionals, such as penetration testers, red teamers, and cybersecurity researchers. **DO NOT** use this code on systems or networks without explicit permission, as doing so may violate laws, including but not limited to the Computer Fraud and Abuse Act (CFAA) and other regional regulations. The author(s) assume **no liability** for misuse, damages, or legal consequences resulting from the use of this code. Use responsibly and at your own risk.
 
 ## Overview
